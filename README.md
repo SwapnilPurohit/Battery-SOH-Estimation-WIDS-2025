@@ -1,3 +1,38 @@
+# Battery State of Health (SOH) Estimation using PINNs
+
+## Theoretical Background: Why Physics-Informed Neural Networks?
+
+Before implementing the models, here is the theoretical foundation for using PINNs over standard Deep Learning approaches, particularly for physical systems where data is scarce or expensive to collect.
+
+### 1. The Problem: Overfitting on Small Data
+Standard Neural Networks are universal function approximators, but they suffer from significant drawbacks in scientific applications:
+* **Overfitting:** With small datasets, NNs tend to memorize the noise rather than the underlying trend.
+* **Poor Extrapolation:** As noted in my study of the "Cooling Coffee" problem, a standard NN trained on the first 5 minutes of cooling data fails to predict the temperature at $t=20$ mins, often producing physically impossible results.
+* **Standard Regularization (L2):** While adding a penalty term ($||\theta||^2$) helps, it does not constrain the model to obey physical laws.
+
+### 2. The Solution: PINN Formulation
+A Physics-Informed Neural Network integrates the governing differential equation directly into the loss function. The network is trained to minimize two conflicting objectives:
+
+$$\text{Loss}_{Total} = \text{Loss}_{Data} + \lambda \cdot \text{Loss}_{Physics}$$
+
+* **Data Loss ($MSE_{Data}$):** Ensures the model fits the sparse observed measurements.
+    * $$\frac{1}{N} \sum (f(x_i) - y_i)^2$$
+* **Physics Loss ($MSE_{PDE}$):** Ensures the model satisfies the underlying differential equation (e.g., Newton's Law of Cooling) at strictly defined "Collocation Points".
+    * $$\frac{1}{M} \sum || g(x_j, \hat{y}) ||^2$$
+    * *Crucially, this requires no labeled data, only valid input coordinates.*
+
+### 3. Key Example: Newton's Law of Cooling
+I analyzed a case study of a cooling cup of coffee governed by $\frac{dT}{dt} = -r(T - T_{env})$.
+* **Scenario:** Training on sparse noisy data ($N=10$) for the first few minutes.
+* **Observation:**
+    * **Vanilla NN:** Fits training points perfectly but oscillates wildly outside the training range.
+    * **PINN:** By enforcing the cooling rate equation, the model learns the correct exponential decay curve even in regions with **zero data**.
+
+### 4. Limitations
+* **Optimization Complexity:** The loss landscape of PINNs is often "bumpy," making Gradient Descent prone to getting stuck in local minima compared to standard loss functions.
+* **Prior Knowledge:** Requires an accurate mathematical formulation (PDE/ODE) of the system.
+
+
 ## Week 1: Physics-Informed Neural Networks (PINNs)
 
 The goal of this week was to build Neural Networks that can solve Ordinary Differential Equations (ODEs) by using the equation itself as the Loss Function ("Physics Loss").
