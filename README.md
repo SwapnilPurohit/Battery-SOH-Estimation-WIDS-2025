@@ -32,3 +32,20 @@ This task extracts the **Open Circuit Voltage (OCV)** curve, which serves as the
 * **Method:** Instead of a continuous discharge, I ran a series of "Rest" simulations at discrete State of Charge (SOC) levels (from 0% to 100%). This allows the voltage to settle to its true thermodynamic potential without internal resistance effects.
 * **Polynomial Regression:** The resulting OCV vs. SOC data points were fitted to a **5th-degree Polynomial**.
 * **Application:** This polynomial `V = f(SOC)` provides a lightweight, computationally efficient way to map SOC to Voltage (and vice versa) for onboard Battery Management Systems (BMS), avoiding the need to run heavy physics simulations in real-time.
+
+## Week 3: Data-Driven SOH Estimation (NASA Dataset)
+
+This week shifted focus from pure physics simulation to **Data-Driven Modeling** using the **NASA Battery Aging Dataset**. The goal was to build a machine learning model capable of estimating State of Health (SOH) from raw sensor data.
+
+### `data_processing.ipynb` (Data Pipeline & Engineering)
+Before training, raw NASA files were processed into structured tensors suitable for Neural Networks.
+* **Dual-Resolution Datasets:** I generated two distinct versions of the data:
+    1.  **Binned Dataset (N=20):** Downsampled input for the Neural Network to efficiently learn temporal patterns.
+    2.  **Physics Dataset (N=200):** High-resolution resampling used to calculate "Ground Truth" values for Charge ($Q$) and Energy ($E$), which will be used later for Physics-Informed loss functions.
+* **Feature Engineering:** Extracted and aligned **Voltage**, **Current**, and **Temperature** profiles for every discharge cycle.
+
+### `week3_transformer.ipynb` (Transformer for SOH)
+Implemented a modern **Transformer Architecture** to predict SOH, replacing traditional RNNs/LSTMs.
+* **Architecture:** A **Sequence-to-One** Transformer Encoder that takes the 20-step discharge profile `(V, I, T)` as input and outputs a single SOH value.
+* **Why Transformers?** Unlike simple Feed-Forward networks, the Transformer uses **Self-Attention** to weigh specific parts of the voltage curve (like the "knee point") that are most indicative of aging.
+* **Baseline Performance:** Established a purely data-driven baseline (training on MSE Loss) to benchmark against future Physics-Informed versions.
